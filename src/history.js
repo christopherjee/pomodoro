@@ -6,8 +6,17 @@ class History extends React.Component {
     }
 
     render() {
+        let history = this.props.history.map(
+            (interval, i) => {
+                return <li key={i}>{interval}</li>;
+            }
+        );
+
         return (
-            <div className="history">History</div>
+            <div>
+                <h1>History</h1>
+                <ol>{history}</ol>
+            </div>
         );
     }
 }

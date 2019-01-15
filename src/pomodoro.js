@@ -7,6 +7,9 @@ const NUM_MINUTES_FOCUS = 25;
 const NUM_SECONDS_FOCUS = 5; //NUM_MINUTES_FOCUS*60;
 const NUM_SECONDS_BREAK = 1; //5*60;
 const NUM_SECONDS_LONGBREAK = 10; //30*60;
+const INTERVAL_FOCUS = "Focus";
+const INTERVAL_BREAK = "Break";
+const INTERVAL_LONGBREAK = "Long Break";
 
 class Pomodoro extends React.Component {
     constructor(props) {
@@ -14,6 +17,7 @@ class Pomodoro extends React.Component {
         this.numSeconds = NUM_SECONDS_FOCUS;
         this.intervalHandle = null;
         this.numPomodoros = 0;
+        this.startingInterval = INTERVAL_FOCUS;
 
         const minSec = this.getMinSec();
         this.state = {
@@ -29,9 +33,6 @@ class Pomodoro extends React.Component {
         return (
             <div>
                 <h1>Pomodoro</h1>
-                <History
-                    history={this.state.history}
-                />
                 <Timer
                     minutes={this.state.minutes}
                     seconds={this.state.seconds}
@@ -39,8 +40,10 @@ class Pomodoro extends React.Component {
                 <Controls
                     isPlay={this.state.isPlay}
                     onPlayPause={() => this.handlePlayPause()}
-                    onStop={() => this.handleStop()}
                     onBack={() => this.handleBack()}
+                />
+                <History
+                    history={this.state.history}
                 />
             </div>
         );
@@ -52,17 +55,17 @@ class Pomodoro extends React.Component {
             clearInterval(this.intervalHandle);
         } else {
             this.intervalHandle = setInterval(() => this.handleTick(), 1000);
+
+            // If starting an interval, log in history
+            if (this.startingInterval !== null) {
+                let history = this.state.history.slice(0); // Copy, don't mutate.
+                history.push(this.startingInterval)
+                this.setState({ history: history });
+                this.startingInterval = null;
+            }
         }
 
         this.setState({ isPlay: !this.state.isPlay });
-    }
-
-    handleStop() {
-        console.log(`Stop clicked`);
-    }
-
-    handleBack() {
-        console.log(`Back clicked`);
     }
 
     handleTick() {
@@ -77,12 +80,15 @@ class Pomodoro extends React.Component {
                 if (this.numPomodoros === 4) {
                     this.numPomodoros = 0;
                     this.numSeconds = NUM_SECONDS_LONGBREAK;
+                    this.startingInterval = INTERVAL_LONGBREAK;
                 } else {
                     this.numSeconds = NUM_SECONDS_BREAK;
+                    this.startingInterval = INTERVAL_BREAK;
                 }
             } else {
                 isFocus = true;
                 this.numSeconds = NUM_SECONDS_FOCUS;
+                this.startingInterval = INTERVAL_FOCUS;
             }
 
             // Refresh minSec calculation after having reset the countdown appropriately.
@@ -93,9 +99,9 @@ class Pomodoro extends React.Component {
         }
 
         this.setState({
+            isFocus: isFocus,
             minutes: minSec.minutes,
             seconds: minSec.seconds,
-            isFocus: isFocus
         });
     }
 
