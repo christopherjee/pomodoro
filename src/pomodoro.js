@@ -12,6 +12,9 @@ class Pomodoro extends React.Component {
     constructor(props) {
         super(props);
         this.numSeconds = NUM_SECONDS_FOCUS;
+        this.intervalHandle = null;
+        this.numPomodoros = 0;
+
         const minSec = this.getMinSec();
         this.state = {
             minutes: minSec.minutes,
@@ -20,8 +23,6 @@ class Pomodoro extends React.Component {
             isPlay: false,
             history: [],
         };
-        this.intervalHandle = null;
-        this.numPomodoros = 0;
     }
 
     render() {
@@ -84,8 +85,11 @@ class Pomodoro extends React.Component {
                 this.numSeconds = NUM_SECONDS_FOCUS;
             }
 
-            // Refresh minSec calculation after having reset the countdown appropriately
+            // Refresh minSec calculation after having reset the countdown appropriately.
             minSec = this.getMinSec();
+
+            // Pause the timer, so the user can get ready for the next interval
+            this.handlePlayPause();
         }
 
         this.setState({
