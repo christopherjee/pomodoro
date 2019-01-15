@@ -18,7 +18,7 @@ class Pomodoro extends React.Component {
         this.numSeconds = NUM_SECONDS_FOCUS;
         this.intervalHandle = null;
         this.numPomodoros = 0;
-        this.startingInterval = INTERVAL_FOCUS;
+        this.currentInterval = INTERVAL_FOCUS;
 
         const minSec = this.getMinSec();
         this.state = {
@@ -59,9 +59,8 @@ class Pomodoro extends React.Component {
             this.intervalHandle = setInterval(() => this.handleTick(), 1000);
 
             // If starting an interval, log in history
-            if (this.startingInterval !== null) {
-                this.appendHistory(this.startingInterval);
-                this.startingInterval = null;
+            if (this.currentInterval !== null) {
+                this.appendHistory(this.currentInterval);
             }
         }
 
@@ -87,15 +86,15 @@ class Pomodoro extends React.Component {
                 if (this.numPomodoros === 4) {
                     this.numPomodoros = 0;
                     this.numSeconds = NUM_SECONDS_LONGBREAK;
-                    this.startingInterval = INTERVAL_LONGBREAK;
+                    this.currentInterval = INTERVAL_LONGBREAK;
                 } else {
                     this.numSeconds = NUM_SECONDS_BREAK;
-                    this.startingInterval = INTERVAL_BREAK;
+                    this.currentInterval = INTERVAL_BREAK;
                 }
             } else {
                 isFocus = true;
                 this.numSeconds = NUM_SECONDS_FOCUS;
-                this.startingInterval = INTERVAL_FOCUS;
+                this.currentInterval = INTERVAL_FOCUS;
             }
 
             // Refresh minSec calculation after having reset the countdown appropriately.
