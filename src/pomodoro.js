@@ -10,6 +10,7 @@ const NUM_SECONDS_LONGBREAK = 10; //30*60;
 const INTERVAL_FOCUS = "Focus";
 const INTERVAL_BREAK = "Break";
 const INTERVAL_LONGBREAK = "Long Break";
+const INTERVAL_PAUSE = "Pause";
 
 class Pomodoro extends React.Component {
     constructor(props) {
@@ -53,20 +54,26 @@ class Pomodoro extends React.Component {
         console.log(`Play / pause clicked, isPlay = ${this.state.isPlay}`);
         if (this.state.isPlay === true) {
             clearInterval(this.intervalHandle);
+            this.appendHistory(INTERVAL_PAUSE);
         } else {
             this.intervalHandle = setInterval(() => this.handleTick(), 1000);
 
             // If starting an interval, log in history
             if (this.startingInterval !== null) {
-                let history = this.state.history.slice(0); // Copy, don't mutate.
-                history.push(this.startingInterval)
-                this.setState({ history: history });
+                this.appendHistory(this.startingInterval);
                 this.startingInterval = null;
             }
         }
 
         this.setState({ isPlay: !this.state.isPlay });
     }
+
+    appendHistory(interval) {
+        let history = this.state.history.slice(0); // Copy, don't mutate.
+        history.push(interval)
+        this.setState({ history: history });
+    }
+
 
     handleTick() {
         console.log(`Tick`);
