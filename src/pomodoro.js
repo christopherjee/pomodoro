@@ -25,7 +25,7 @@ class Pomodoro extends React.Component {
             minutes: minSec.minutes,
             seconds: minSec.seconds,
             currentInterval: INTERVAL_FOCUS,
-            numPomodoros: 1,
+            currentPomodoro: 1,
             isPlay: false,
             isBlink: true,
             history: [],
@@ -37,7 +37,7 @@ class Pomodoro extends React.Component {
             <div style={{
                 backgroundColor: (
                     this.state.isPlay || this.state.isBlink
-                        ? (this.state.isFocus ? "#8CC152" : "#E9573F" )
+                        ? (this.state.currentInterval === INTERVAL_FOCUS ? "#8CC152" : "#E9573F" )
                         : "#FFFFFF")
             }}>
                 <h1>Pomodoro</h1>
@@ -47,13 +47,14 @@ class Pomodoro extends React.Component {
                 />
                 <Progress
                     currentInterval={this.state.currentInterval}
-                    numPomodoros={this.state.numPomodoros}
+                    currentPomodoro={this.state.currentPomodoro}
                     totalPomodoros={NUM_TOTAL_POMODOROS}
                 />
                 <Controls
                     isPlay={this.state.isPlay}
                     onPlayPause={() => this.handlePlayPause()}
-                    onBack={() => this.handleBack()}
+                    onBack={() => this.handleBackNext('back')}
+                    onNext={() => this.handleBackNext('next')}
                 />
                 <History
                     history={this.state.history}
@@ -62,23 +63,105 @@ class Pomodoro extends React.Component {
         );
     }
 
-    handlePlayPause() {
-        console.log(`Play / pause clicked, isPlay = ${this.state.isPlay}`);
-        if (this.state.isPlay === true) {
-            this.appendHistory(INTERVAL_PAUSE);
+    handlePlayPause(forcePlayPause = null) {
+        // If forcePlayPause is set, use that setting. Otherwise, just toggle.
+        let isPlay = forcePlayPause ? forcePlayPause === 'play' : !this.state.isPlay;
+
+        console.log(`Play / pause, this.state.isPlay = ${this.state.isPlay}, forcePlayPause = ${forcePlayPause}, isPlay = ${isPlay}`);
+
+        if (isPlay === false) {
             clearInterval(this.intervalHandle);
             this.intervalHandle = setInterval(() => this.handleTick(), 250);
+            this.appendHistory(INTERVAL_PAUSE);
         } else {
             clearInterval(this.intervalHandle);
             this.intervalHandle = setInterval(() => this.handleTick(), 1000);
-
-            // If starting an interval, log in history
-            if (this.state.currentInterval !== null) {
-                this.appendHistory(this.state.currentInterval);
-            }
+            this.appendHistory(this.state.currentInterval);
         }
 
-        this.setState({ isPlay: !this.state.isPlay });
+        this.setState({ isPlay: isPlay });
+    }
+
+    handleBackNext(direction) {
+        console.log(`${direction}`);
+        let currentInterval = this.state.currentInterval;
+        let currentPomodoro = this.state.currentPomodoro;
+        switch (direction) {
+            case 'back':
+                // If it's playing, just go back to the beginning of the interval
+                if (this.state.isPlay !== true) {
+                    switch (currentInterval) {
+                        case INTERVAL_FOCUS:
+                            if (currentPomodoro !== 1) {
+                                currentInterval = INTERVAL_BREAK;
+                                currentPomodoro--;
+                            }
+                            break;
+                        case INTERVAL_BREAK:
+                        case INTERVAL_LONGBREAK:
+                            currentInterval = INTERVAL_FOCUS;
+                            break;
+                        default:
+                            console.log("No current interval");
+                            break;
+                    }
+                }
+                break;
+            case 'next':
+                switch (currentInterval) {
+                    case INTERVAL_FOCUS:
+                        if (currentPomodoro === NUM_TOTAL_POMODOROS) {
+                            currentInterval = INTERVAL_LONGBREAK;
+                        } else {
+                            currentInterval = INTERVAL_BREAK;
+                        }
+                        break;
+                    case INTERVAL_BREAK:
+                    case INTERVAL_LONGBREAK:
+                        if (currentPomodoro === NUM_TOTAL_POMODOROS) {
+                            currentPomodoro = 1;
+                        } else {
+                            currentPomodoro++;
+                        }
+
+                        currentInterval = INTERVAL_FOCUS;
+                        break;
+                    default:
+                        console.log("No current interval");
+                        break;
+                }
+                break;
+            default:
+                console.log("No direction supplied");
+                break;
+        }
+
+        // Always pause after changing direction
+        this.handlePlayPause('pause');
+
+        // Reset countdown based on new interval
+        switch (currentInterval) {
+            case INTERVAL_FOCUS:
+                this.numSeconds = NUM_SECONDS_FOCUS;
+                break;
+            case INTERVAL_BREAK:
+                this.numSeconds = NUM_SECONDS_BREAK;
+                break;
+            case INTERVAL_LONGBREAK:
+                this.numSeconds = NUM_SECONDS_LONGBREAK;
+                break;
+            default:
+                console.log("No current interval");
+                break;
+        }
+
+        let minSec = this.getMinSec();
+        this.setState({
+            minutes: minSec.minutes,
+            seconds: minSec.seconds,
+            currentInterval: currentInterval,
+            currentPomodoro: currentPomodoro,
+        });
     }
 
     appendHistory(interval) {
@@ -93,49 +176,17 @@ class Pomodoro extends React.Component {
         if (this.state.isPlay === true) {
             this.numSeconds--;
             let minSec = this.getMinSec();
-            let isFocus = this.state.isFocus;
-            let currentInterval = this.state.currentInterval;
-            let numPomodoros = this.state.numPomodoros;
+
+            // If we are looking at state change, then let that handler
+            // take care of it. Otherwise, just update the countdown.
             if (minSec.minutes === 0 && minSec.seconds === 0) {
-                if (isFocus === true) {
-                    isFocus = false;
-
-                    // If it's the last pomodoro, we go to a long break
-                    if (numPomodoros === NUM_TOTAL_POMODOROS) {
-                        this.numSeconds = NUM_SECONDS_LONGBREAK;
-                        currentInterval = INTERVAL_LONGBREAK;
-                    } else {
-                        this.numSeconds = NUM_SECONDS_BREAK;
-                        currentInterval = INTERVAL_BREAK;
-                    }
-                } else {
-                    isFocus = true;
-
-                    // If this is the last of the pomodoros, reset
-                    if (numPomodoros === NUM_TOTAL_POMODOROS) {
-                        numPomodoros = 1;
-                    } else {
-                        numPomodoros++;
-                    }
-
-                    this.numSeconds = NUM_SECONDS_FOCUS;
-                    currentInterval = INTERVAL_FOCUS;
-                }
-
-                // Refresh minSec calculation after having reset the countdown appropriately.
-                minSec = this.getMinSec();
-
-                // Pause the timer, so the user can get ready for the next interval
-                this.handlePlayPause();
+                this.handleBackNext('next');
+            } else {
+                this.setState({
+                    minutes: minSec.minutes,
+                    seconds: minSec.seconds,
+                });
             }
-
-            this.setState({
-                isFocus: isFocus,
-                minutes: minSec.minutes,
-                seconds: minSec.seconds,
-                currentInterval: currentInterval,
-                numPomodoros: numPomodoros,
-            });
         } else {
             this.setState({
                 isBlink: !this.state.isBlink,
