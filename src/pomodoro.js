@@ -2,6 +2,7 @@ import React from 'react';
 import Timer from './timer.js';
 import History from './history.js';
 import Controls from './controls.js';
+import Progress from './progress.js';
 
 const NUM_MINUTES_FOCUS = 25;
 const NUM_SECONDS_FOCUS = 10 //NUM_MINUTES_FOCUS*60;
@@ -11,20 +12,20 @@ const INTERVAL_FOCUS = "Focus";
 const INTERVAL_BREAK = "Break";
 const INTERVAL_LONGBREAK = "Long Break";
 const INTERVAL_PAUSE = "Pause";
+const NUM_TOTAL_POMODOROS = 4;
 
 class Pomodoro extends React.Component {
     constructor(props) {
         super(props);
         this.numSeconds = NUM_SECONDS_FOCUS;
         this.intervalHandle = null;
-        this.numPomodoros = 0;
-        this.currentInterval = INTERVAL_FOCUS;
 
         const minSec = this.getMinSec();
         this.state = {
             minutes: minSec.minutes,
             seconds: minSec.seconds,
-            isFocus: true,
+            currentInterval: INTERVAL_FOCUS,
+            numPomodoros: 1,
             isPlay: false,
             isBlink: true,
             history: [],
@@ -43,6 +44,11 @@ class Pomodoro extends React.Component {
                 <Timer
                     minutes={this.state.minutes}
                     seconds={this.state.seconds}
+                />
+                <Progress
+                    currentInterval={this.state.currentInterval}
+                    numPomodoros={this.state.numPomodoros}
+                    totalPomodoros={NUM_TOTAL_POMODOROS}
                 />
                 <Controls
                     isPlay={this.state.isPlay}
@@ -67,8 +73,8 @@ class Pomodoro extends React.Component {
             this.intervalHandle = setInterval(() => this.handleTick(), 1000);
 
             // If starting an interval, log in history
-            if (this.currentInterval !== null) {
-                this.appendHistory(this.currentInterval);
+            if (this.state.currentInterval !== null) {
+                this.appendHistory(this.state.currentInterval);
             }
         }
 
@@ -88,22 +94,32 @@ class Pomodoro extends React.Component {
             this.numSeconds--;
             let minSec = this.getMinSec();
             let isFocus = this.state.isFocus;
+            let currentInterval = this.state.currentInterval;
+            let numPomodoros = this.state.numPomodoros;
             if (minSec.minutes === 0 && minSec.seconds === 0) {
                 if (isFocus === true) {
                     isFocus = false;
-                    this.numPomodoros++;
-                    if (this.numPomodoros === 4) {
-                        this.numPomodoros = 0;
+
+                    // If it's the last pomodoro, we go to a long break
+                    if (numPomodoros === NUM_TOTAL_POMODOROS) {
                         this.numSeconds = NUM_SECONDS_LONGBREAK;
-                        this.currentInterval = INTERVAL_LONGBREAK;
+                        currentInterval = INTERVAL_LONGBREAK;
                     } else {
                         this.numSeconds = NUM_SECONDS_BREAK;
-                        this.currentInterval = INTERVAL_BREAK;
+                        currentInterval = INTERVAL_BREAK;
                     }
                 } else {
                     isFocus = true;
+
+                    // If this is the last of the pomodoros, reset
+                    if (numPomodoros === NUM_TOTAL_POMODOROS) {
+                        numPomodoros = 1;
+                    } else {
+                        numPomodoros++;
+                    }
+
                     this.numSeconds = NUM_SECONDS_FOCUS;
-                    this.currentInterval = INTERVAL_FOCUS;
+                    currentInterval = INTERVAL_FOCUS;
                 }
 
                 // Refresh minSec calculation after having reset the countdown appropriately.
@@ -117,6 +133,8 @@ class Pomodoro extends React.Component {
                 isFocus: isFocus,
                 minutes: minSec.minutes,
                 seconds: minSec.seconds,
+                currentInterval: currentInterval,
+                numPomodoros: numPomodoros,
             });
         } else {
             this.setState({
