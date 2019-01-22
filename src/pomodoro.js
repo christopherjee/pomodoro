@@ -35,7 +35,7 @@ class Pomodoro extends React.Component {
         return (
             <div style={{
                 backgroundColor: (
-                    this.state.isBlink
+                    this.state.isPlay || this.state.isBlink
                         ? (this.state.isFocus ? "#8CC152" : "#E9573F" )
                         : "#FFFFFF")
             }}>
