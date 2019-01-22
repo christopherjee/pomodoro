@@ -4,9 +4,9 @@ import History from './history.js';
 import Controls from './controls.js';
 
 const NUM_MINUTES_FOCUS = 25;
-const NUM_SECONDS_FOCUS = NUM_MINUTES_FOCUS*60;
-const NUM_SECONDS_BREAK = 5*60;
-const NUM_SECONDS_LONGBREAK = 30*60;
+const NUM_SECONDS_FOCUS = 10 //NUM_MINUTES_FOCUS*60;
+const NUM_SECONDS_BREAK = 5 // 5*60;
+const NUM_SECONDS_LONGBREAK = 15 //30*60;
 const INTERVAL_FOCUS = "Focus";
 const INTERVAL_BREAK = "Break";
 const INTERVAL_LONGBREAK = "Long Break";
